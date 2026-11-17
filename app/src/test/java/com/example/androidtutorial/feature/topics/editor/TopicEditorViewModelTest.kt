@@ -4,6 +4,7 @@ import com.example.androidtutorial.MainDispatcherRule
 import com.example.androidtutorial.core.model.NewTopic
 import com.example.androidtutorial.core.model.TopicCategory
 import com.example.androidtutorial.feature.topics.FakeTopicRepository
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.launch
@@ -71,5 +72,22 @@ class TopicEditorViewModelTest {
         vm.fill()
         vm.onIntent(TopicEditorIntent.Save)
         assertEquals(listOf<TopicEditorEffect>(TopicEditorEffect.SaveFailed), effects)
+    }
+
+    @Test
+    fun `second save while add is in flight is ignored`() = runTest {
+        val repo = FakeTopicRepository()
+        val gate = CompletableDeferred<Unit>()
+        repo.addGate = gate
+        val vm = TopicEditorViewModel(repo)
+        val effects = mutableListOf<TopicEditorEffect>()
+        backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) { vm.effects.toList(effects) }
+        vm.fill()
+        vm.onIntent(TopicEditorIntent.Save)
+        vm.onIntent(TopicEditorIntent.Save)
+        gate.complete(Unit)
+        testScheduler.advanceUntilIdle()
+        assertEquals(1, repo.added.size)
+        assertEquals(listOf<TopicEditorEffect>(TopicEditorEffect.Saved), effects)
     }
 }

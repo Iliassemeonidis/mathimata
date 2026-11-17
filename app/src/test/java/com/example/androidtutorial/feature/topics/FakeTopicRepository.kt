@@ -3,6 +3,7 @@ package com.example.androidtutorial.feature.topics
 import com.example.androidtutorial.core.data.repository.TopicRepository
 import com.example.androidtutorial.core.model.NewTopic
 import com.example.androidtutorial.core.model.Topic
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 
@@ -11,10 +12,12 @@ class FakeTopicRepository(initial: List<Topic> = emptyList()) : TopicRepository 
     val added = mutableListOf<NewTopic>()
     val restored = mutableListOf<Topic>()
     var fail = false
+    var addGate: CompletableDeferred<Unit>? = null
 
     override fun observeAll(): Flow<List<Topic>> = topics
 
     override suspend fun add(draft: NewTopic) {
+        addGate?.await()
         check(!fail) { "db" }
         added += draft
         val id = (topics.value.maxOfOrNull { it.id } ?: 0L) + 1

@@ -24,6 +24,7 @@ class TopicEditorViewModel(
 
     private val _effects = Channel<TopicEditorEffect>(Channel.BUFFERED)
     val effects: Flow<TopicEditorEffect> = _effects.receiveAsFlow()
+    private var saveInFlight = false
 
     fun onIntent(intent: TopicEditorIntent) {
         when (intent) {
@@ -54,6 +55,8 @@ class TopicEditorViewModel(
         }
         if (title.isEmpty() || summary.isEmpty() || body.isEmpty() || code.isEmpty()) return
         if (category == null) return
+        if (saveInFlight) return
+        saveInFlight = true
         viewModelScope.launch {
             try {
                 repository.add(NewTopic(title, summary, body, code, category))
@@ -61,6 +64,7 @@ class TopicEditorViewModel(
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {
+                saveInFlight = false
                 _effects.send(TopicEditorEffect.SaveFailed)
             }
         }
