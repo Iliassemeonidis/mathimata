@@ -124,6 +124,8 @@ fun MainShell(
     val onListEffect: (TopicListViewModel, TopicListEffect) -> Unit = { viewModel, effect ->
         when (effect) {
             is TopicListEffect.ShowUndo -> scope.launch {
+                // Only the latest delete is undoable, so drop the snackbar of an older one.
+                snackbarHost.currentSnackbarData?.dismiss()
                 val result = snackbarHost.showSnackbar(
                     message = "Тема удалена",
                     actionLabel = "Отменить",

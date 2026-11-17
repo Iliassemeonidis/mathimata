@@ -7,6 +7,9 @@ import androidx.compose.foundation.background
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.Lifecycle
+import androidx.navigation.NavBackStackEntry
+import androidx.navigation.NavController
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -28,6 +31,16 @@ import com.example.androidtutorial.feature.topics.editor.TopicEditorViewModel
 
 private const val TopicIdArg = "topicId"
 private const val CategoryArg = "category"
+
+/**
+ * Pops [entry] only while it is the settled destination: a second tap or a late effect during
+ * the transition would otherwise pop the shell too and leave an empty back stack.
+ */
+private fun NavController.popIfResumed(entry: NavBackStackEntry) {
+    if (!entry.lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED)) return
+    if (currentDestination?.route == AppDestination.Shell) return
+    popBackStack()
+}
 
 @Composable
 fun AppNavHost(modifier: Modifier = Modifier) {
@@ -77,7 +90,7 @@ fun AppNavHost(modifier: Modifier = Modifier) {
             )
             TopicDetailScreen(
                 viewModel = viewModel,
-                onClose = { navController.popBackStack() },
+                onClose = { navController.popIfResumed(entry) },
             )
         }
         composable(
@@ -101,7 +114,7 @@ fun AppNavHost(modifier: Modifier = Modifier) {
             )
             TopicEditorScreen(
                 viewModel = viewModel,
-                onClose = { navController.popBackStack() },
+                onClose = { navController.popIfResumed(entry) },
             )
         }
         composable(
@@ -110,8 +123,8 @@ fun AppNavHost(modifier: Modifier = Modifier) {
             exitTransition = { bookExit() },
             popEnterTransition = { bookPopEnter() },
             popExitTransition = { bookPopExit() },
-        ) {
-            ProfileScreen(onBack = { navController.popBackStack() })
+        ) { entry ->
+            ProfileScreen(onBack = { navController.popIfResumed(entry) })
         }
     }
 }
