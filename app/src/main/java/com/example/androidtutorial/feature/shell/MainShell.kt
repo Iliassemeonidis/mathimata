@@ -31,9 +31,12 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.mutableStateMapOf
-import androidx.compose.runtime.remember
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateMapOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.listSaver
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -106,6 +109,18 @@ fun MainShell(
     val backStackEntry by tabNav.currentBackStackEntryAsState()
     val route = backStackEntry?.destination?.route ?: AppDestination.Home
     val visits = rememberSaveable(saver = TabVisits.Saver) { TabVisits() }
+    var lastTabRoute by rememberSaveable { mutableStateOf<String?>(null) }
+
+    // Tap, system Back and any other pop change the selected tab route the same way. Only that
+    // change starts a visit. A topic or the profile leaves the route alone. A null entry means
+    // the NavHost has not restored its back stack yet, so it is ignored.
+    val entryRoute = backStackEntry?.destination?.route
+    LaunchedEffect(entryRoute) {
+        if (entryRoute != null) {
+            routeToCountAsVisit(lastTabRoute, entryRoute)?.let(visits::increment)
+            lastTabRoute = entryRoute
+        }
+    }
     val snackbarHost = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
 
@@ -191,8 +206,7 @@ fun MainShell(
                         selected = route == tab.route,
                         onClick = {
                             if (route != tab.route) {
-                                // Only a tab switch starts a new visit. Popping back from detail does not.
-                                visits.increment(tab.route)
+                                // The visit is counted when the selected tab route changes, not here.
                                 tabNav.navigate(tab.route) {
                                     launchSingleTop = true
                                     restoreState = true
