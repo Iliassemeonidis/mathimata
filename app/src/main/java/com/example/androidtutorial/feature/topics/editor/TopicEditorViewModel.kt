@@ -5,6 +5,10 @@ import androidx.lifecycle.viewModelScope
 import com.example.androidtutorial.core.data.repository.TopicRepository
 import com.example.androidtutorial.core.model.NewTopic
 import com.example.androidtutorial.core.model.TopicCategory
+import dagger.assisted.Assisted
+import dagger.assisted.AssistedFactory
+import dagger.assisted.AssistedInject
+import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.Flow
@@ -15,10 +19,16 @@ import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
-class TopicEditorViewModel(
+@HiltViewModel(assistedFactory = TopicEditorViewModel.Factory::class)
+class TopicEditorViewModel @AssistedInject constructor(
     private val repository: TopicRepository,
-    initialCategory: TopicCategory? = null,
+    @Assisted initialCategory: TopicCategory? = null,
 ) : ViewModel() {
+    @AssistedFactory
+    interface Factory {
+        fun create(initialCategory: TopicCategory?): TopicEditorViewModel
+    }
+
     private val _state = MutableStateFlow(TopicEditorState(category = initialCategory))
     val state: StateFlow<TopicEditorState> = _state.asStateFlow()
 

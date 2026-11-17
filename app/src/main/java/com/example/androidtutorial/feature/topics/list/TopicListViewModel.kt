@@ -5,6 +5,10 @@ import androidx.lifecycle.viewModelScope
 import com.example.androidtutorial.core.data.repository.TopicRepository
 import com.example.androidtutorial.core.model.Topic
 import com.example.androidtutorial.core.model.TopicFilter
+import dagger.assisted.Assisted
+import dagger.assisted.AssistedFactory
+import dagger.assisted.AssistedInject
+import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.Flow
@@ -17,11 +21,17 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlin.random.Random
 
-class TopicListViewModel(
+@HiltViewModel(assistedFactory = TopicListViewModel.Factory::class)
+class TopicListViewModel @AssistedInject constructor(
     private val repository: TopicRepository,
     private val randomSource: RandomSource,
-    private val filter: TopicFilter,
+    @Assisted private val filter: TopicFilter,
 ) : ViewModel() {
+    @AssistedFactory
+    interface Factory {
+        fun create(filter: TopicFilter): TopicListViewModel
+    }
+
     private val _state = MutableStateFlow(TopicListState())
     val state: StateFlow<TopicListState> = _state.asStateFlow()
 

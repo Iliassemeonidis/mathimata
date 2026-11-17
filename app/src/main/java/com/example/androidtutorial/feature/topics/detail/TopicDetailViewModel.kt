@@ -3,6 +3,10 @@ package com.example.androidtutorial.feature.topics.detail
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.androidtutorial.core.data.repository.TopicRepository
+import dagger.assisted.Assisted
+import dagger.assisted.AssistedFactory
+import dagger.assisted.AssistedInject
+import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.Flow
@@ -13,10 +17,16 @@ import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.launch
 
-class TopicDetailViewModel(
+@HiltViewModel(assistedFactory = TopicDetailViewModel.Factory::class)
+class TopicDetailViewModel @AssistedInject constructor(
     private val repository: TopicRepository,
-    private val topicId: Long,
+    @Assisted private val topicId: Long,
 ) : ViewModel() {
+    @AssistedFactory
+    interface Factory {
+        fun create(topicId: Long): TopicDetailViewModel
+    }
+
     private val _state = MutableStateFlow(TopicDetailState())
     val state: StateFlow<TopicDetailState> = _state.asStateFlow()
 
