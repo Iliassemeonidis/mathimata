@@ -4,9 +4,15 @@ import com.example.androidtutorial.core.model.Topic
 import com.example.androidtutorial.core.model.TopicCategory
 import com.example.androidtutorial.core.model.TopicFilter
 import org.junit.Assert.assertEquals
+import org.junit.Before
 import org.junit.Test
 
 class TopicOrderingTest {
+    @Before
+    fun resetHomeVisit() {
+        TopicOrdering.startHomeVisit()
+    }
+
     private fun topic(
         id: Long,
         category: TopicCategory,
@@ -61,5 +67,51 @@ class TopicOrderingTest {
         )
         val ids = TopicOrdering.arrange(topics, TopicFilter.ALL) { it.reversed() }.map { it.id }
         assertEquals(listOf(2L, 1L), ids)
+    }
+
+    @Test
+    fun homeKeepsStoredOrderAcrossCalls() {
+        val topics = listOf(
+            topic(1, TopicCategory.KOTLIN, true, 1, 0),
+            topic(2, TopicCategory.ANDROID, true, 1, 0),
+        )
+        var shuffleCount = 0
+        val shuffle: (List<Topic>) -> List<Topic> = {
+            shuffleCount++
+            it.reversed()
+        }
+        val first = TopicOrdering.arrange(topics, TopicFilter.ALL, shuffle).map { it.id }
+        val second = TopicOrdering.arrange(topics, TopicFilter.ALL, shuffle).map { it.id }
+        assertEquals(listOf(2L, 1L), first)
+        assertEquals(first, second)
+        assertEquals(1, shuffleCount)
+    }
+
+    @Test
+    fun startHomeVisitShufflesAgain() {
+        val topics = listOf(
+            topic(1, TopicCategory.KOTLIN, true, 1, 0),
+            topic(2, TopicCategory.ANDROID, true, 1, 0),
+        )
+        var shuffleCount = 0
+        val shuffle: (List<Topic>) -> List<Topic> = {
+            shuffleCount++
+            it.reversed()
+        }
+        TopicOrdering.arrange(topics, TopicFilter.ALL, shuffle)
+        TopicOrdering.startHomeVisit()
+        TopicOrdering.arrange(topics, TopicFilter.ALL, shuffle)
+        assertEquals(2, shuffleCount)
+    }
+
+    @Test
+    fun homeDropsMissingIdsAndAppendsNewOnes() {
+        val a = topic(1, TopicCategory.KOTLIN, true, 1, 0)
+        val b = topic(2, TopicCategory.ANDROID, true, 1, 0)
+        val c = topic(3, TopicCategory.KOTLIN, true, 2, 0)
+        TopicOrdering.arrange(listOf(a, b), TopicFilter.ALL) { it.reversed() }
+        val ids = TopicOrdering.arrange(listOf(a, c), TopicFilter.ALL) { error("no shuffle") }
+            .map { it.id }
+        assertEquals(listOf(1L, 3L), ids)
     }
 }
