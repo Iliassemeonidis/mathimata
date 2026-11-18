@@ -17,9 +17,10 @@ import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SwipeToDismissBox
+import androidx.compose.material3.SwipeToDismissBoxDefaults
+import androidx.compose.material3.SwipeToDismissBoxState
 import androidx.compose.material3.SwipeToDismissBoxValue
 import androidx.compose.material3.Text
-import androidx.compose.material3.rememberSwipeToDismissBoxState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -109,7 +110,12 @@ private fun DismissibleTopicCard(
     onToggleFavorite: () -> Unit,
     onDelete: () -> Unit,
 ) {
-    val state = rememberSwipeToDismissBoxState()
+    // Not saveable: LazyColumn keeps saved item state by key, so a restored topic would come
+    // back already dismissed and delete itself again.
+    val positionalThreshold = SwipeToDismissBoxDefaults.positionalThreshold
+    val state = remember {
+        SwipeToDismissBoxState(SwipeToDismissBoxValue.Settled, positionalThreshold)
+    }
     val currentOnDelete by rememberUpdatedState(onDelete)
 
     LaunchedEffect(state.currentValue) {
